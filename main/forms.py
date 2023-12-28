@@ -44,5 +44,4 @@ class IconChangeForm(forms.ModelForm):
         model = User
         fields = ("icon",)
         labels = {"icon": "アイコン画像"}
-
-# sample
+    

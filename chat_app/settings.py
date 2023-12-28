@@ -161,3 +161,10 @@ LANGUAGES = [
     ("en", "English"),
     ("ja", "Japanese"),
 ]
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+try:
+    from .local_settings import *
+except:
+    pass
