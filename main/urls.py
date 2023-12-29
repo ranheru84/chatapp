@@ -3,11 +3,11 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path("", views.index, name="index"),
-    path("signup/", views.signup, name="signup"),
+    path("", views.IndexView.as_view(), name="index"),
+    path("signup/", views.SignupView.as_view(), name="signup"),
     # path("login/", views.login, name="login"),
     path("login/", views.LoginView.as_view(), name="login"), 
-    path("friends/", views.friends, name="friends"),
+    path("friends/", views.FriendsView.as_view(), name="friends"),
     path("talk_room/<user_id>", views.talk_room, name="talk_room"),
     path("settings/", views.settings, name="settings"),
     path("username_change/", views.username_change, name="username_change"),
@@ -25,4 +25,6 @@ urlpatterns = [
         name="password_change_done",
     ),
     path("logout/", views.LogoutView.as_view(), name="logout"), 
+    path("icon_change/", views.icon_change, name="icon_change"),
+    path("icon_change_done/", views.icon_change_done, name="icon_change_done"),
 ] 

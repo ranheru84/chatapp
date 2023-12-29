@@ -30,3 +30,18 @@ class EmailChangeForm(forms.ModelForm):
         fields = ("email",)
         labels = {"email": "新しいメールアドレス"}
 
+class FriendsSearchForm(forms.Form):
+    """友達の中からユーザーを検索"""
+
+    keyword = forms.CharField(
+        label="検索",
+        required=True,
+        widget=forms.TextInput(attrs={"placeholder": "ユーザー名で検索"}),
+    )
+
+class IconChangeForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ("icon",)
+        labels = {"icon": "アイコン画像"}
+

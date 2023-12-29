@@ -1,5 +1,5 @@
 from django.contrib import auth  # 追加
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.shortcuts import get_object_or_404, redirect, render  # redirect を追加
 from django.contrib.auth import views as auth_views  
 from .forms import (
@@ -8,53 +8,68 @@ from .forms import (
     TalkForm,
     UsernameChangeForm,  
     EmailChangeForm,
+    FriendsSearchForm,
+    IconChangeForm,
 )
 
 from django.contrib.auth.decorators import login_required 
 from .models import Talk, User
 from django.urls import reverse_lazy
+from django.db.models.functions import Greatest, Coalesce
+from django.views.generic.base import TemplateView
+from django.views.generic.edit import CreateView
+from django.db import models
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic.list import ListView
+# def index(request):
+#     return render(request, "main/index.html")
 
-def index(request):
-    return render(request, "main/index.html")
+class IndexView(TemplateView):
+    template_name = "main/index.html"
 
 # もとの signup 関数を、以下で置き換える
-def signup(request):
-    if request.method == "GET":
-        form = SignUpForm()
-    elif request.method == "POST":
-        form = SignUpForm(request.POST)
+# def signup(request):
+#     if request.method == "GET":
+#         form = SignUpForm()
+#     elif request.method == "POST":
+#         form = SignUpForm(request.POST)
 
-        if form.is_valid():
-            # モデルフォームは form の値を models にそのまま格納できる
-            # save() メソッドがあるので便利
-            form.save()
+#         if form.is_valid():
+#             # モデルフォームは form の値を models にそのまま格納できる
+#             # save() メソッドがあるので便利
+#             form.save()
 
-            # フォームから username と password を読み取る
-            username = form.cleaned_data["username"]
-            password = form.cleaned_data["password1"]
+#             # フォームから username と password を読み取る
+#             username = form.cleaned_data["username"]
+#             password = form.cleaned_data["password1"]
 
-            # 認証情報のセットを検証するには authenticate() を利用します。
-            # このメソッドは認証情報をキーワード引数として受け取ります。
-            user = auth.authenticate(username=username, password=password)
+#             # 認証情報のセットを検証するには authenticate() を利用します。
+#             # このメソッドは認証情報をキーワード引数として受け取ります。
+#             user = auth.authenticate(username=username, password=password)
 
-            # 検証する対象はデフォルトでは username と password であり、
-            # その組み合わせを個々の認証バックエンドに対して問い合わせ、
-            # 認証バックエンドで認証情報が有効とされれば User オブジェクトを返します。
-            # もしいずれの認証バックエンドでも認証情報が有効と判定されなければ
-            # PermissionDenied エラーが送出され、None が返されます。
-            # つまり、autenticate メソッドは"username"と"password"を受け取り、
-            # その組み合わせが存在すればその User を返し、不正であれば None を返します。
-            if user:
-                # あるユーザーをログインさせる場合は、login() を利用します。
-                # この関数は HttpRequest オブジェクトと User オブジェクトを受け取ります。
-                # ここでの User は認証バックエンド属性を持ってる必要があり、
-                # authenticate() が返す User は user.backend（認証バックエンド属性）を持つので連携可能。
-                auth.login(request, user)
+#             # 検証する対象はデフォルトでは username と password であり、
+#             # その組み合わせを個々の認証バックエンドに対して問い合わせ、
+#             # 認証バックエンドで認証情報が有効とされれば User オブジェクトを返します。
+#             # もしいずれの認証バックエンドでも認証情報が有効と判定されなければ
+#             # PermissionDenied エラーが送出され、None が返されます。
+#             # つまり、autenticate メソッドは"username"と"password"を受け取り、
+#             # その組み合わせが存在すればその User を返し、不正であれば None を返します。
+#             if user:
+#                 # あるユーザーをログインさせる場合は、login() を利用します。
+#                 # この関数は HttpRequest オブジェクトと User オブジェクトを受け取ります。
+#                 # ここでの User は認証バックエンド属性を持ってる必要があり、
+#                 # authenticate() が返す User は user.backend（認証バックエンド属性）を持つので連携可能。
+#                 auth.login(request, user)
 
-            return redirect("index")
+#             return redirect("index")
 
-    context = {"form": form}
-    return render(request, "main/signup.html", context)
+#     context = {"form": form}
+#     return render(request, "main/signup.html", context)
+
+class SignupView(CreateView):
+    form_class = SignUpForm
+    template_name = "main/signup.html"
+    success_url = reverse_lazy("index")
 
 def login(request):
     return render(request, "main/login.html")
@@ -64,13 +79,6 @@ class LoginView(auth_views.LoginView):
     authentication_form = LoginForm  # ログイン用のフォームを指定
     template_name = "main/login.html"  # テンプレートを指定
 
-@login_required
-def friends(request):
-    friends = User.objects.all()
-    context = {
-        "friends" : friends,
-    }
-    return render(request, "main/friends.html", context)
 
 def talk_room(request, user_id):
     return render(request, "main/talk_room.html")
@@ -171,3 +179,118 @@ class PasswordChangeDoneView(auth_views.PasswordChangeDoneView):
 
 class LogoutView(auth_views.LogoutView):
     pass
+
+# @login_required
+# def friends(request):
+#     friends = User.objects.all()
+#     context = {
+#         "friends" : friends,
+#     }
+#     return render(request, "main/friends.html", context)
+
+
+# @login_required
+# def friends(request):
+#     friends = User.objects.exclude(id=request.user.id)
+
+#     sorted_friends = []
+#     for friend in friends:
+#         # 各 friend について、最後にチャットした日付を調べる
+#         talks = Talk.objects.filter(
+#             Q(sender=friend, receiver=request.user)
+#             | Q(sender=request.user, receiver=friend)
+#         ).order_by("-time")
+#         if talks:
+#             sorted_friends.append((friend, True, talks[0].time))
+#         else:
+#             sorted_friends.append((friend, False, None))
+
+#     sorted_friends.sort(key=lambda x: (x[1], x[2]), reverse=True)
+
+#     context = {"friends": sorted_friends}
+#     return render(request, "main/friends.html", context)
+
+# @login_required
+# def friends(request):
+#     friends = User.objects.exclude(id=request.user.id).annotate(
+#         sent_talk__time__max=Max(
+#             "sent_talk__time", filter=Q(sent_talk__receiver=request.user)
+#         ),
+#         received_talk__time__max=Max(
+#             "received_talk__time",
+#             filter=Q(received_talk__sender=request.user),
+#         ),
+#         time_max=Greatest(
+#             "sent_talk__time__max", "received_talk__time__max"
+#         ),
+#         last_talk_time=Coalesce(
+#             "time_max", "sent_talk__time__max", "received_talk__time__max"
+#         ),
+#     ).order_by("-last_talk_time").values("id", "username", "last_talk_time")
+
+#     context = {"friends": friends}
+#     return render(request, "main/friends.html", context)
+
+class FriendsView(LoginRequiredMixin, ListView):
+    template_name = "main/friends.html"
+    paginate_by = 15
+    context_object_name = "friends"
+
+    def get_queryset(self):
+        queryset = User.objects.exclude(id=self.request.user.id).annotate(
+            sent_talk__time__max=Max(
+                "sent_talk__time",
+                filter=Q(sent_talk__receiver=self.request.user),
+            ),
+            received_talk__time__max=Max(
+                "received_talk__time",
+                filter=Q(received_talk__sender=self.request.user),
+            ),
+            time_max=Greatest(
+                "sent_talk__time__max", "received_talk__time__max"
+            ),
+            last_talk_time=Coalesce(
+                "time_max",
+                "sent_talk__time__max",
+                "received_talk__time__max",
+            ),
+        ).order_by("-last_talk_time")
+        form = FriendsSearchForm(self.request.GET)
+        if form.is_valid():
+            keyword = form.cleaned_data["keyword"]
+            if keyword:
+                queryset = queryset.filter(username__icontains=keyword)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        form = FriendsSearchForm(self.request.GET)
+        if form.is_valid():
+            context["keyword"] = form.cleaned_data["keyword"]
+
+        context["form"] = form
+        return context
+
+@login_required
+def icon_change(request):
+    if request.method == "GET":
+        form = IconChangeForm(instance=request.user)
+    elif request.method == "POST":
+        form = IconChangeForm(
+            request.POST, request.FILES, instance=request.user
+        )
+        if form.is_valid():
+            form.save()
+            return redirect("icon_change_done")
+    
+    context = {
+        "form": form
+    }
+    return render(request, "main/icon_change.html", context)
+
+@login_required
+def icon_change_done(request):
+    return render(request, "main/icon_change_done.html")
+    

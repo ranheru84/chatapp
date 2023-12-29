@@ -3,7 +3,7 @@ from django.db import models
 
 
 class User(AbstractUser):
-    pass
+    icon = models.ImageField(null=True, blank=True)
 
 # 以下を追加
 class Talk(models.Model):

@@ -94,3 +94,11 @@
     line-height: 1;
     color: #888;
 }
+
+.chatboard__message--friend {
+    background-color: white;
+}
+
+.chatboard__message--myself {
+    background-color: greenyellow;
+}

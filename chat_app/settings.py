@@ -38,16 +38,19 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "main", 
+    "debug_toolbar",
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "django.middleware.locale.LocaleMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = 'chat_app.urls'
@@ -136,3 +139,25 @@ try:
 except ImportError:
     # local_settings.py が存在しなくてもエラーにならないようにする
     pass
+
+# 変数自体を追加
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
+MEDIA_ROOT = BASE_DIR / "media"
+
+MEDIA_URL = "/media/"
+
+USE_I18N = True  # デフォルトでは True のため、編集する必要はない。
+
+# 翻訳ファイルの場所を指定
+LOCALE_PATHS = [
+    BASE_DIR / "locale",
+]
+
+# サポートする言語を列挙
+LANGUAGES = [
+    ("en", "English"),
+    ("ja", "Japanese"),
+]
